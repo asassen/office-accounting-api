@@ -32,4 +32,4 @@ Logs: `%ProgramData%\OfficeAccountingApi\log.txt`. See each folder's README for 
 - Never commit your real `ApiKey`. Back up company databases before writing real data; create/update was only tested on the sample company.
 
 ## Not implemented
-Invoice creation, delete/deactivate endpoints.
+Delete/deactivate endpoints, invoice editing/voiding, purchase documents.

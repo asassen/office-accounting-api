@@ -36,8 +36,12 @@ Every request (except `/api/companies`) can pick a company with an `X-Company: <
 - `POST /api/customers` `{ "name", "email", "phone", "comments" }`
 - `PUT /api/customers/{guid}` any of `name, email, phone, comments, active`
 - `GET /api/vendors`, `/api/items`, `/api/invoices` (raw SDK data views)
+- `GET /api/invoices/{guid}` – invoice with lines, `subTotal`, `tax`, `total`, `balance`
+- `POST /api/invoices` – create a sales invoice (VAT is added from each item's tax group):
+  `{"customerGuid":"…","date":"2026-11-07","dueDate":"…","reference":"…","lines":[{"itemGuid":"…","quantity":2,"unitPrice":5.62,"description":"…"}]}`
+  `date`, `dueDate`, `reference`, `unitPrice` and `description` are optional; the date must fall in an open financial year.
 
 ## Notes
 - All SDK calls run serially on one STA thread.
 - Back up the company database before writing to it.
-- Invoice creation is not implemented yet; extend `Program.cs` using `ISmallBusinessInstance.CreateSalesInvoice`.
+- Not implemented: delete/deactivate, invoice editing/voiding, purchase documents.

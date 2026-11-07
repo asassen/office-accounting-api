@@ -55,6 +55,12 @@ public sealed class OfficeAccountingClient : IDisposable
     public Task<List<Dictionary<string, JsonElement>>> GetInvoicesAsync(CancellationToken ct = default) =>
         Send<List<Dictionary<string, JsonElement>>>(HttpMethod.Get, "api/invoices", null, ct);
 
+    public Task<Invoice> GetInvoiceAsync(Guid guid, CancellationToken ct = default) =>
+        Send<Invoice>(HttpMethod.Get, $"api/invoices/{guid}", null, ct);
+
+    public Task<Invoice> CreateInvoiceAsync(NewInvoice invoice, CancellationToken ct = default) =>
+        Send<Invoice>(HttpMethod.Post, "api/invoices", invoice, ct);
+
     async Task<T> Send<T>(HttpMethod method, string path, object? body, CancellationToken ct)
     {
         using var req = new HttpRequestMessage(method, path);

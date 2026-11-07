@@ -62,6 +62,77 @@ namespace OfficeAccountingApi
             };
         }
 
+        public static Dictionary<string, object> Invoice(ISalesInvoice inv)
+        {
+            var lines = new List<Dictionary<string, object>>();
+            decimal net = 0m, tax = 0m;
+            foreach (var row in Rows(inv.SalesInvoiceLines.DataView))
+            {
+                var sub = row.TryGetValue("SubTotal", out var st) && st != null ? System.Convert.ToDecimal(st) : 0m;
+                if (row.TryGetValue("LineItemID", out var li) && li != null)
+                {
+                    net += sub;
+                    lines.Add(new Dictionary<string, object>
+                    {
+                        ["itemName"] = row["ItemName"],
+                        ["description"] = row["Description"],
+                        ["quantity"] = row["Quantity"],
+                        ["unitPrice"] = row["UnitPrice"],
+                        ["subTotal"] = sub,
+                    });
+                }
+                else if (row.TryGetValue("TaxCodeID", out var tc) && tc != null) tax += sub;
+            }
+            return new Dictionary<string, object>
+            {
+                ["guid"] = inv.Guid.ToString(),
+                ["number"] = inv.DocumentDisplayNumber,
+                ["reference"] = inv.ReferenceNumber,
+                ["customerGuid"] = inv.CustomerAccount?.Guid.ToString(),
+                ["customerName"] = inv.CustomerName,
+                ["date"] = inv.FinancialDateTime.ToString("o"),
+                ["dueDate"] = inv.DueDate.ToString("o"),
+                ["subTotal"] = net,
+                ["tax"] = tax,
+                ["total"] = net + tax,
+                ["balance"] = inv.Balance,
+                ["voided"] = inv.IsVoided,
+                ["lines"] = lines,
+            };
+        }
+
+        public static ISalesInvoice CreateInvoice(ISmallBusinessInstance i, Dictionary<string, object> body)
+        {
+            if (!body.TryGetValue("customerGuid", out var cg) || !Guid.TryParse(cg as string, out var customerGuid))
+                throw new ApiException(400, "customerGuid is required");
+            var customer = i.CustomerAccounts.GetByGuid(customerGuid) as ICustomerAccount
+                           ?? throw new ApiException(404, "Customer not found");
+            var lines = body.TryGetValue("lines", out var l) ? l as System.Collections.IList : null;
+            if (lines == null || lines.Count == 0) throw new ApiException(400, "lines must contain at least one line");
+
+            var inv = i.CreateSalesInvoice(false);
+            inv.CustomerAccount = customer;
+            if (body.TryGetValue("date", out var date) && date != null) inv.FinancialDateTime = DateTime.Parse((string)date);
+            if (body.TryGetValue("dueDate", out var due) && due != null) inv.DueDate = DateTime.Parse((string)due);
+            if (body.TryGetValue("reference", out var reference) && reference != null) inv.ReferenceNumber = (string)reference;
+
+            foreach (var raw in lines)
+            {
+                var ln = raw as Dictionary<string, object> ?? throw new ApiException(400, "Invalid line");
+                if (!ln.TryGetValue("itemGuid", out var ig) || !Guid.TryParse(ig as string, out var itemGuid))
+                    throw new ApiException(400, "Each line needs itemGuid");
+                var item = i.ItemAccounts.GetByGuid(itemGuid) as IItemAccount
+                           ?? throw new ApiException(404, "Item not found: " + itemGuid);
+                var line = (IItemLine)inv.CreateSalesInvoiceLine(DocumentLineType.ContractItemLineType);
+                line.LineItem = item;
+                line.Quantity = ln.TryGetValue("quantity", out var q) ? System.Convert.ToDecimal(q) : 1m;
+                if (ln.TryGetValue("unitPrice", out var p) && p != null) line.UnitPrice = System.Convert.ToDecimal(p);
+                if (ln.TryGetValue("description", out var d) && d != null) line.Description = (string)d;
+            }
+            inv.Save();
+            return inv;
+        }
+
         public static void ApplyCustomer(ICustomerAccount c, Dictionary<string, object> body)
         {
             if (body.TryGetValue("name", out var name)) c.Name = (string)name;
@@ -300,7 +371,7 @@ namespace OfficeAccountingApi
 
                 case "vendors": return List(method, i => i.VendorAccounts.DataView);
                 case "items": return List(method, i => i.ItemAccounts.DataView);
-                case "invoices": return List(method, i => i.SalesInvoices.DataView);
+                case "invoices": return Invoices(req, method, id);
                 default: throw new ApiException(404, "Unknown resource");
             }
         }
@@ -345,6 +416,24 @@ namespace OfficeAccountingApi
                     }).GetAwaiter().GetResult();
                 }
             }
+            throw new ApiException(405, "Method not allowed");
+        }
+
+        static object Invoices(HttpListenerRequest req, string method, string id)
+        {
+            if (id == null && method == "GET") return List(method, i => i.SalesInvoices.DataView);
+
+            if (id == null && method == "POST")
+            {
+                var body = ReadBody(req);
+                return session.Invoke(i => Mapper.Invoice(Mapper.CreateInvoice(i, body))).GetAwaiter().GetResult();
+            }
+
+            if (id != null && method == "GET" && Guid.TryParse(id, out var guid))
+                return session.Invoke(i => Mapper.Invoice(
+                    i.SalesInvoices.GetByGuid(guid) as ISalesInvoice ?? throw new ApiException(404, "Invoice not found")))
+                    .GetAwaiter().GetResult();
+
             throw new ApiException(405, "Method not allowed");
         }
 

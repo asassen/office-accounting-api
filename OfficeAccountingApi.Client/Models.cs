@@ -64,3 +64,48 @@ internal static class Json
         PropertyNameCaseInsensitive = true,
     };
 }
+
+public class NewInvoiceLine
+{
+    public Guid ItemGuid { get; set; }
+    public decimal Quantity { get; set; } = 1;
+    /// <summary>Defaults to the item's price when null.</summary>
+    public decimal? UnitPrice { get; set; }
+    public string? Description { get; set; }
+}
+
+public class NewInvoice
+{
+    public Guid CustomerGuid { get; set; }
+    /// <summary>Must fall in an open financial year; defaults to today.</summary>
+    public DateTime? Date { get; set; }
+    public DateTime? DueDate { get; set; }
+    public string? Reference { get; set; }
+    public List<NewInvoiceLine> Lines { get; set; } = new();
+}
+
+public class InvoiceLine
+{
+    public string? ItemName { get; set; }
+    public string? Description { get; set; }
+    public decimal Quantity { get; set; }
+    public decimal UnitPrice { get; set; }
+    public decimal SubTotal { get; set; }
+}
+
+public class Invoice
+{
+    public Guid Guid { get; set; }
+    public string? Number { get; set; }
+    public string? Reference { get; set; }
+    public Guid? CustomerGuid { get; set; }
+    public string? CustomerName { get; set; }
+    public DateTime Date { get; set; }
+    public DateTime DueDate { get; set; }
+    public decimal SubTotal { get; set; }
+    public decimal Tax { get; set; }
+    public decimal Total { get; set; }
+    public decimal Balance { get; set; }
+    public bool Voided { get; set; }
+    public List<InvoiceLine> Lines { get; set; } = new();
+}
