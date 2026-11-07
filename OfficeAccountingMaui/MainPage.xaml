@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:client="clr-namespace:OfficeAccounting.Client;assembly=OfficeAccounting.Client"
+             x:Class="OfficeAccountingMaui.MainPage"
+             Title="Office Accounting">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*" Padding="16" RowSpacing="10">
+
+        <VerticalStackLayout Grid.Row="0" Spacing="6">
+            <Entry x:Name="UrlEntry" Placeholder="Service URL, e.g. http://ants-pc:5080/" Keyboard="Url" />
+            <Entry x:Name="KeyEntry" Placeholder="API key" IsPassword="True" />
+            <Button Text="Connect" Clicked="OnConnectClicked" />
+        </VerticalStackLayout>
+
+        <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+            <Label Text="Company" VerticalOptions="Center" />
+            <Picker x:Name="CompanyPicker" Grid.Column="1" Title="Select company"
+                    SelectedIndexChanged="OnCompanyChanged" />
+            <Button Grid.Column="2" Text="New customer" Clicked="OnNewCustomerClicked" />
+        </Grid>
+
+        <Label x:Name="StatusLabel" Grid.Row="2" TextColor="Gray" />
+
+        <RefreshView x:Name="Refresher" Grid.Row="3" Refreshing="OnRefreshing">
+            <CollectionView x:Name="CustomerList" SelectionMode="Single"
+                            SelectionChanged="OnCustomerSelected">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="client:CustomerSummary">
+                        <Grid ColumnDefinitions="*,Auto" Padding="4,8">
+                            <VerticalStackLayout>
+                                <Label Text="{Binding Name}" FontAttributes="Bold" />
+                                <Label Text="{Binding Email}" TextColor="Gray" FontSize="12" />
+                            </VerticalStackLayout>
+                            <Label Grid.Column="1" Text="{Binding Balance, StringFormat='{0:N2}'}"
+                                   VerticalOptions="Center" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+    </Grid>
+</ContentPage>
