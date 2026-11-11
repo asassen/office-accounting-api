@@ -35,9 +35,9 @@ Logs: `%ProgramData%\OfficeAccountingApi\log.txt`. See each folder's README for 
 Delete/deactivate endpoints, invoice editing/voiding, purchase documents.
 
 ## Remote access over Tailscale
-Set `Prefix` to `http://+:5080/` (listen on all interfaces), then in an elevated PowerShell allow only Tailscale addresses through the firewall and restart:
+Set `Prefix` to `http://+:5080/` (listen on all interfaces), then in an elevated PowerShell allow only Tailscale and local-network (`LocalSubnet`) addresses through the firewall and restart:
 ```
-New-NetFirewallRule -DisplayName "OfficeAccountingApi (Tailscale)" -Direction Inbound -Protocol TCP -LocalPort 5080 -RemoteAddress 100.64.0.0/10 -Action Allow
+New-NetFirewallRule -DisplayName "OfficeAccountingApi (Tailscale)" -Direction Inbound -Protocol TCP -LocalPort 5080 -RemoteAddress 100.64.0.0/10,LocalSubnet -Action Allow
 Restart-Service OfficeAccountingApi
 ```
-Then use `http://<tailscale-ip>:5080/` in the app. A `localhost` prefix only accepts requests addressed to `localhost`. On Android, plain http needs cleartext traffic enabled.
+Then use `http://<tailscale-ip>:5080/` (anywhere) or `http://<pc-lan-ip>:5080/` (home network) in the app. A `localhost` prefix only accepts requests addressed to `localhost`. On Android, plain http needs cleartext traffic enabled.
