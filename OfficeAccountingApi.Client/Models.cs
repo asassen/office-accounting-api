@@ -109,3 +109,18 @@ public class Invoice
     public bool Voided { get; set; }
     public List<InvoiceLine> Lines { get; set; } = new();
 }
+
+/// <summary>One row of the invoice list.</summary>
+public class InvoiceSummary
+{
+    public Guid Guid { get; set; }
+    public string? DocumentDisplayNumber { get; set; }
+    public string? CustomerName { get; set; }
+    public DateTime FinancialDateTime { get; set; }
+    public DateTime? DueDate { get; set; }
+    public decimal TotalPrice { get; set; }
+    public decimal Balance { get; set; }
+    public string? Symbol { get; set; }
+    public bool IsVoided { get; set; }
+    public int IntegerPart { get; set; }
+}

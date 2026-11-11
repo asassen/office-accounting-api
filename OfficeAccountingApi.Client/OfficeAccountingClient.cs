@@ -55,6 +55,13 @@ public sealed class OfficeAccountingClient : IDisposable
     public Task<List<Dictionary<string, JsonElement>>> GetInvoicesAsync(CancellationToken ct = default) =>
         Send<List<Dictionary<string, JsonElement>>>(HttpMethod.Get, "api/invoices", null, ct);
 
+    /// <summary>Typed list of invoices, newest first.</summary>
+    public async Task<List<InvoiceSummary>> GetInvoiceSummariesAsync(CancellationToken ct = default)
+    {
+        var list = await Send<List<InvoiceSummary>>(HttpMethod.Get, "api/invoices", null, ct).ConfigureAwait(false);
+        return list.OrderByDescending(i => i.FinancialDateTime).ThenByDescending(i => i.IntegerPart).ToList();
+    }
+
     public Task<Invoice> GetInvoiceAsync(Guid guid, CancellationToken ct = default) =>
         Send<Invoice>(HttpMethod.Get, $"api/invoices/{guid}", null, ct);
 

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:client="clr-namespace:OfficeAccounting.Client;assembly=OfficeAccounting.Client"
+             x:Class="OfficeAccountingMaui.InvoiceDetailPage">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="6">
+            <Label x:Name="HeaderLabel" FontSize="22" FontAttributes="Bold" />
+            <Label x:Name="CustomerLabel" FontSize="16" />
+            <Label x:Name="DatesLabel" TextColor="Gray" />
+            <Label x:Name="ReferenceLabel" TextColor="Gray" />
+            <Label x:Name="VoidedLabel" Text="VOIDED" TextColor="Red" FontAttributes="Bold" IsVisible="False" />
+
+            <BoxView HeightRequest="1" Color="LightGray" Margin="0,8" />
+
+            <CollectionView x:Name="LinesList" SelectionMode="None">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="client:InvoiceLine">
+                        <Grid ColumnDefinitions="*,Auto" Padding="0,6">
+                            <VerticalStackLayout>
+                                <Label Text="{Binding ItemName}" FontAttributes="Bold" />
+                                <Label Text="{Binding Description}" TextColor="Gray" FontSize="12" />
+                                <Label FontSize="12" TextColor="Gray">
+                                    <Label.FormattedText>
+                                        <FormattedString>
+                                            <Span Text="{Binding Quantity, StringFormat='{0:0.##}'}" />
+                                            <Span Text=" x " />
+                                            <Span Text="{Binding UnitPrice, StringFormat='{0:N2}'}" />
+                                        </FormattedString>
+                                    </Label.FormattedText>
+                                </Label>
+                            </VerticalStackLayout>
+                            <Label Grid.Column="1" Text="{Binding SubTotal, StringFormat='{0:N2}'}"
+                                   VerticalOptions="Center" />
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <BoxView HeightRequest="1" Color="LightGray" Margin="0,8" />
+
+            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="4">
+                <Label Text="Subtotal" />
+                <Label x:Name="SubTotalLabel" Grid.Column="1" />
+                <Label Grid.Row="1" Text="VAT" />
+                <Label x:Name="TaxLabel" Grid.Row="1" Grid.Column="1" />
+                <Label Grid.Row="2" Text="Total" FontAttributes="Bold" />
+                <Label x:Name="TotalLabel" Grid.Row="2" Grid.Column="1" FontAttributes="Bold" />
+                <Label Grid.Row="3" Text="Balance due" />
+                <Label x:Name="BalanceLabel" Grid.Row="3" Grid.Column="1" />
+            </Grid>
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

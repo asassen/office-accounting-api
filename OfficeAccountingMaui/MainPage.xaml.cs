@@ -4,51 +4,58 @@ namespace OfficeAccountingMaui;
 
 public partial class MainPage : ContentPage
 {
-	const string KeyUrl = "service_url";
-	const string KeyCompany = "company";
-	const string KeyApiKey = "api_key";
-
 	OfficeAccountingClient? client;
 	bool loadingCompanies;
+	string? connectedUrl;
+	string? connectedApiKey;
 
 	public MainPage()
 	{
 		InitializeComponent();
-		Loaded += async (_, _) => await RestoreAsync();
+	}
+
+	protected override async void OnAppearing()
+	{
+		base.OnAppearing();
+		await RestoreAsync();
 	}
 
 	async Task RestoreAsync()
 	{
-		UrlEntry.Text = Preferences.Get(KeyUrl, "");
-		KeyEntry.Text = await SecureStorage.GetAsync(KeyApiKey) ?? "";
-		if (!string.IsNullOrWhiteSpace(UrlEntry.Text) && !string.IsNullOrWhiteSpace(KeyEntry.Text))
-			await ConnectAsync();
-	}
-
-	async void OnConnectClicked(object? sender, EventArgs e) => await ConnectAsync();
-
-	async Task ConnectAsync()
-	{
-		if (!Uri.TryCreate(UrlEntry.Text?.Trim(), UriKind.Absolute, out var uri) || string.IsNullOrWhiteSpace(KeyEntry.Text))
+		var url = Preferences.Get(AppSettings.ServiceUrlKey, "").Trim();
+		var apiKey = (await SecureStorage.GetAsync(AppSettings.ApiKeyKey) ?? "").Trim();
+		if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || string.IsNullOrWhiteSpace(apiKey))
 		{
-			StatusLabel.Text = "Enter a valid URL and API key.";
+			StatusLabel.Text = "Set server URL and API key in Settings.";
 			return;
 		}
 
+		if (client != null &&
+			string.Equals(url, connectedUrl, StringComparison.OrdinalIgnoreCase) &&
+			string.Equals(apiKey, connectedApiKey, StringComparison.Ordinal))
+		{
+			return;
+		}
+
+		await ConnectAsync(uri, apiKey);
+	}
+
+	async Task ConnectAsync(Uri uri, string apiKey)
+	{
+
 		client?.Dispose();
-		client = new OfficeAccountingClient(uri, KeyEntry.Text.Trim());
+		client = new OfficeAccountingClient(uri, apiKey);
 		try
 		{
 			StatusLabel.Text = "Connecting...";
 			var result = await client.GetCompaniesAsync();
-
-			Preferences.Set(KeyUrl, uri.ToString());
-			await SecureStorage.SetAsync(KeyApiKey, KeyEntry.Text.Trim());
+			connectedUrl = uri.ToString();
+			connectedApiKey = apiKey;
 
 			var companies = result.Companies.ToList();
 			loadingCompanies = true;
 			CompanyPicker.ItemsSource = companies;
-			var saved = Preferences.Get(KeyCompany, result.Default ?? "");
+			var saved = Preferences.Get(AppSettings.CompanyKey, result.Default ?? "");
 			var index = companies.FindIndex(c => c.Equals(saved, StringComparison.OrdinalIgnoreCase));
 			CompanyPicker.SelectedIndex = index >= 0 ? index : (companies.Count > 0 ? 0 : -1);
 			loadingCompanies = false;
@@ -71,7 +78,7 @@ public partial class MainPage : ContentPage
 	{
 		if (client == null || CompanyPicker.SelectedItem is not string company) return;
 		client.Company = company;
-		Preferences.Set(KeyCompany, company);
+		Preferences.Set(AppSettings.CompanyKey, company);
 		await LoadCustomersAsync();
 	}
 
